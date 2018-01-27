@@ -1,4 +1,4 @@
-package transformers
+package com.iravid.irwst
 
 import java.util.concurrent.TimeUnit
 import org.openjdk.jmh.annotations._

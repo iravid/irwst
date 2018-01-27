@@ -1,4 +1,4 @@
-package transformers
+package com.iravid.irwst
 
 case class State[S, A](run: S => (S, A)) {
   def map[B](f: A => B): State[S, B] = State { s =>

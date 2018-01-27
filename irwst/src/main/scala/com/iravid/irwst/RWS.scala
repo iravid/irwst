@@ -1,4 +1,4 @@
-package transformers
+package com.iravid.irwst
 
 sealed abstract class RWS[E, S, L, A] { self =>
   def tag: Int
@@ -23,15 +23,6 @@ object RWS {
   final def logged[E, S, L, A](l: L, a: A): RWS[E, S, L, A] = Logged(l, a)
 
   final def apply[E, S, L, A](f: (E, S) => (S, L, A)): RWS[E, S, L, A] = Wrap(f)
-
-  def traverse[E, S, L, A, B](l: List[A])(f: A => RWS[E, S, L, B]): RWS[E, S, L, List[B]] =
-    l.foldLeft(pure[E, S, L, List[B]](Nil: List[B])) { (acc, el) =>
-      acc flatMap { bs =>
-        f(el) map { b =>
-          b :: bs
-        }
-      }
-    } map (_.reverse)
 
   object Tags {
     final val Pure = 0
@@ -211,7 +202,7 @@ object Interpreter {
             case RWS.Tags.Wrap =>
               val nested = currOp.asInstanceOf[RWS.Wrap[E, S, L, A]]
 
-              val wrapResult = op.f(env, state)
+              val wrapResult = nested.f(env, state)
 
               state = wrapResult._1
               log = combine(log, wrapResult._2)

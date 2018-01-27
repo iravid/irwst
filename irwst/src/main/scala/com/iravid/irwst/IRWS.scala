@@ -14,7 +14,7 @@ object IRWS {
 
   final def get[E, S, L]: IRWS[E, S, S, L, S] = Get()
 
-  final def set[E, S, L](s: S): IRWS[E, S, S, L, Unit] = Set(s)
+  final def set[E, SA, SB, L](s: SB): IRWS[E, SA, SB, L, Unit] = Set(s)
 
   final def ask[E, S, L]: IRWS[E, S, S, L, E] = Ask()
 
@@ -23,6 +23,12 @@ object IRWS {
   final def logged[E, S, L, A](l: L, a: A): IRWS[E, S, S, L, A] = Logged(l, a)
 
   final def apply[E, SA, SB, L, A](f: (E, SA) => (SB, L, A)): IRWS[E, SA, SB, L, A] = Wrap(f)
+
+  final def modify[E, SA, SB, L](f: SA => SB): IRWS[E, SA, SB, L, Unit] =
+    get.flatMap(s => set(f(s)))
+
+  final def inspect[E, SA, L, SB](f: SA => SB): IRWS[E, SA, SA, L, SB] =
+    get.map(f)
 
   object Tags {
     final val Pure = 0
@@ -49,7 +55,7 @@ object IRWS {
     override final def tag = Tags.Get
   }
 
-  final case class Set[E, S, L](s: S) extends IRWS[E, S, S, L, Unit] {
+  final case class Set[E, SA, SB, L](s: SB) extends IRWS[E, SA, SB, L, Unit] {
     override final def tag = Tags.Set
   }
 
@@ -104,7 +110,7 @@ object Interpreter {
             currOp = conts.pollFirst()(res)
 
         case IRWS.Tags.Set =>
-          val op = currOp.asInstanceOf[IRWS.Set[E, Any, L]]
+          val op = currOp.asInstanceOf[IRWS.Set[E, Any, Any, L]]
 
           state = op.s
           res = unit
@@ -172,7 +178,7 @@ object Interpreter {
               currOp = op.f(state)
 
             case IRWS.Tags.Set =>
-              val nested = op.fa.asInstanceOf[IRWS.Set[E, Any, L]]
+              val nested = op.fa.asInstanceOf[IRWS.Set[E, Any, Any, L]]
 
               state = nested.s
               res = unit

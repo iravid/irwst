@@ -50,6 +50,10 @@ inThisBuild(List(
     "-Ywarn-unused:patvars",             // Warn if a variable bound in a pattern is unused.
     "-Ywarn-unused:privates",            // Warn if a private member is unused.
     "-Ywarn-value-discard"               // Warn when non-Unit expression results are unused.
+  ),
+  libraryDependencies ++= Seq(
+    "org.scalatest" %% "scalatest" % "3.0.4" % "test",
+    "org.scalacheck" %% "scalacheck" % "1.13.4" % "test"
   )
 ))
 
@@ -71,6 +75,7 @@ lazy val cats = (project in file("cats"))
       "org.typelevel" %% "cats-core" % "1.0.1"
     )
   )
+  .dependsOn(irwst)
 
 lazy val benchmarks = (project in file("benchmarks"))
   .settings(

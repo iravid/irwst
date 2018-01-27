@@ -1,28 +1,28 @@
 package com.iravid.irwst
 
-sealed abstract class RWS[E, S, L, A] { self =>
+sealed abstract class IRWS[E, SA, SB, L, A] { self =>
   def tag: Int
 
-  final def map[B](f: A => B): RWS[E, S, L, B] = RWS.FlatMap(self, f.andThen(RWS.Pure(_)))
+  final def map[B](f: A => B): IRWS[E, SA, SB, L, B] = IRWS.FlatMap(self, f.andThen(IRWS.Pure[E, SB, L, B](_)))
 
-  final def flatMap[B](f: A => RWS[E, S, L, B]): RWS[E, S, L, B] =
-    RWS.FlatMap(self, f)
+  final def flatMap[SC, B](f: A => IRWS[E, SB, SC, L, B]): IRWS[E, SA, SC, L, B] =
+    IRWS.FlatMap(self, f)
 }
 
-object RWS {
-  final def pure[E, S, L, A](a: A): RWS[E, S, L, A] = Pure(a)
+object IRWS {
+  final def pure[E, S, L, A](a: A): IRWS[E, S, S, L, A] = Pure(a)
 
-  final def get[E, S, L]: RWS[E, S, L, S] = Get()
+  final def get[E, S, L]: IRWS[E, S, S, L, S] = Get()
 
-  final def set[E, S, L](s: S): RWS[E, S, L, Unit] = Set(s)
+  final def set[E, S, L](s: S): IRWS[E, S, S, L, Unit] = Set(s)
 
-  final def ask[E, S, L]: RWS[E, S, L, E] = Ask()
+  final def ask[E, S, L]: IRWS[E, S, S, L, E] = Ask()
 
-  final def tell[E, S, L](l: L): RWS[E, S, L, Unit] = Tell(l)
+  final def tell[E, S, L](l: L): IRWS[E, S, S, L, Unit] = Tell(l)
 
-  final def logged[E, S, L, A](l: L, a: A): RWS[E, S, L, A] = Logged(l, a)
+  final def logged[E, S, L, A](l: L, a: A): IRWS[E, S, S, L, A] = Logged(l, a)
 
-  final def apply[E, S, L, A](f: (E, S) => (S, L, A)): RWS[E, S, L, A] = Wrap(f)
+  final def apply[E, SA, SB, L, A](f: (E, SA) => (SB, L, A)): IRWS[E, SA, SB, L, A] = Wrap(f)
 
   object Tags {
     final val Pure = 0
@@ -36,50 +36,50 @@ object RWS {
     final val Wrap = 8
   }
 
-  final case class Pure[E, S, L, A](a: A) extends RWS[E, S, L, A] {
+  final case class Pure[E, S, L, A](a: A) extends IRWS[E, S, S, L, A] {
     override final def tag = Tags.Pure
   }
 
-  final case class FlatMap[E, S, L, A, B](fa: RWS[E, S, L, A], f: A => RWS[E, S, L, B]) 
-      extends RWS[E, S, L, B] {
+  final case class FlatMap[E, SA, SB, SC, L, A, B](fa: IRWS[E, SA, SB, L, A], f: A => IRWS[E, SB, SC, L, B]) 
+      extends IRWS[E, SA, SC, L, B] {
     override final def tag = Tags.FlatMap
   }
 
-  final case class Get[E, S, L]() extends RWS[E, S, L, S] {
+  final case class Get[E, S, L]() extends IRWS[E, S, S, L, S] {
     override final def tag = Tags.Get
   }
 
-  final case class Set[E, S, L](s: S) extends RWS[E, S, L, Unit] {
+  final case class Set[E, S, L](s: S) extends IRWS[E, S, S, L, Unit] {
     override final def tag = Tags.Set
   }
 
-  final case class Ask[E, S, L]() extends RWS[E, S, L, E] {
+  final case class Ask[E, S, L]() extends IRWS[E, S, S, L, E] {
     override final def tag = Tags.Ask
   }
 
-  final case class Tell[E, S, L](l: L) extends RWS[E, S, L, Unit] {
+  final case class Tell[E, S, L](l: L) extends IRWS[E, S, S, L, Unit] {
     override final def tag = Tags.Tell
   }
 
-  final case class Logged[E, S, L, A](l: L, a: A) extends RWS[E, S, L, A] {
+  final case class Logged[E, S, L, A](l: L, a: A) extends IRWS[E, S, S, L, A] {
     override final def tag = Tags.Logged
   }
 
-  final case class Wrap[E, S, L, A](f: (E, S) => (S, L, A)) extends RWS[E, S, L, A] {
+  final case class Wrap[E, SA, SB, L, A](f: (E, SA) => (SB, L, A)) extends IRWS[E, SA, SB, L, A] {
     override final def tag = Tags.Wrap
   }
 }
 
 object Interpreter {
-  def runOptimized[E, S, L, A](env: E, init: S, initLog: L)(fa: RWS[E, S, L, A])(combine: (L, L) => L): (S, L, A) = {
-    var currOp: RWS[E, S, L, Any] = fa.asInstanceOf[RWS[E, S, L, Any]]
+  def runOptimized[E, SA, SB, L, A](env: E, init: SA, initLog: L)(fa: IRWS[E, SA, SB, L, A])(combine: (L, L) => L): (SB, L, A) = {
+    var currOp: IRWS[E, Any, Any, L, Any] = fa.asInstanceOf[IRWS[E, Any, Any, L, Any]]
     var done: Boolean = false
 
-    var conts: java.util.ArrayDeque[Any => RWS[E, S, L, Any]] = new java.util.ArrayDeque
+    val conts: java.util.ArrayDeque[Any => IRWS[E, Any, Any, L, Any]] = new java.util.ArrayDeque
 
     var log: L = initLog
 
-    var state: S = init
+    var state: Any = init
     var res: Any = null
 
     // Put () on the stack to avoid field access
@@ -87,15 +87,15 @@ object Interpreter {
 
     do {
       currOp.tag match {
-        case RWS.Tags.Pure =>
-          res = currOp.asInstanceOf[RWS.Pure[E, S, L, A]].a
+        case IRWS.Tags.Pure =>
+          res = currOp.asInstanceOf[IRWS.Pure[E, Any, L, A]].a
 
           if (conts.isEmpty())
             done = true
           else
             currOp = conts.pollFirst()(res)
 
-        case RWS.Tags.Get =>
+        case IRWS.Tags.Get =>
           res = state
 
           if (conts.isEmpty())
@@ -103,8 +103,8 @@ object Interpreter {
           else
             currOp = conts.pollFirst()(res)
 
-        case RWS.Tags.Set =>
-          val op = currOp.asInstanceOf[RWS.Set[E, S, L]]
+        case IRWS.Tags.Set =>
+          val op = currOp.asInstanceOf[IRWS.Set[E, Any, L]]
 
           state = op.s
           res = unit
@@ -114,7 +114,7 @@ object Interpreter {
           else
             currOp = conts.pollFirst()(res)
 
-        case RWS.Tags.Ask =>
+        case IRWS.Tags.Ask =>
           res = env
 
           if (conts.isEmpty())
@@ -122,8 +122,8 @@ object Interpreter {
           else
             currOp = conts.pollFirst()(res)
 
-        case RWS.Tags.Tell =>
-          val op = currOp.asInstanceOf[RWS.Tell[E, S, L]]
+        case IRWS.Tags.Tell =>
+          val op = currOp.asInstanceOf[IRWS.Tell[E, Any, L]]
 
           log = combine(log, op.l)
 
@@ -132,8 +132,8 @@ object Interpreter {
           else
             currOp = conts.pollFirst()(res)
 
-        case RWS.Tags.Logged =>
-          val op = currOp.asInstanceOf[RWS.Logged[E, S, L, A]]
+        case IRWS.Tags.Logged =>
+          val op = currOp.asInstanceOf[IRWS.Logged[E, Any, L, A]]
 
           res = op.a
           log = combine(log, op.l)
@@ -143,8 +143,8 @@ object Interpreter {
           else
             currOp = conts.pollFirst()(res)
 
-        case RWS.Tags.Wrap =>
-          val op = currOp.asInstanceOf[RWS.Wrap[E, S, L, A]]
+        case IRWS.Tags.Wrap =>
+          val op = currOp.asInstanceOf[IRWS.Wrap[E, Any, Any, L, A]]
 
           val wrapResult = op.f(env, state)
 
@@ -157,50 +157,48 @@ object Interpreter {
           else
             currOp = conts.pollFirst()(res)
 
-        case RWS.Tags.FlatMap =>
-          val op = currOp.asInstanceOf[RWS.FlatMap[E, S, L, Any, Any]]
+        case IRWS.Tags.FlatMap =>
+          val op = currOp.asInstanceOf[IRWS.FlatMap[E, Any, Any, Any, L, Any, Any]]
 
           op.fa.tag match {
-            case RWS.Tags.Pure =>
-              val nested = op.fa.asInstanceOf[RWS.Pure[E, S, L, Any]]
+            case IRWS.Tags.Pure =>
+              val nested = op.fa.asInstanceOf[IRWS.Pure[E, Any, L, Any]]
 
               res = nested.a
               currOp = op.f(nested.a)
 
-            case RWS.Tags.Get =>
+            case IRWS.Tags.Get =>
               res = state
               currOp = op.f(state)
 
-            case RWS.Tags.Set =>
-              val nested = op.fa.asInstanceOf[RWS.Set[E, S, L]]
+            case IRWS.Tags.Set =>
+              val nested = op.fa.asInstanceOf[IRWS.Set[E, Any, L]]
 
               state = nested.s
               res = unit
               currOp = op.f(unit)
 
-            case RWS.Tags.Ask =>
-              val nested = op.fa.asInstanceOf[RWS.Ask[E, S, L]]
-
+            case IRWS.Tags.Ask =>
               res = env
               currOp = op.f(env)
 
-            case RWS.Tags.Tell =>
-              val nested = op.fa.asInstanceOf[RWS.Tell[E, S, L]]
+            case IRWS.Tags.Tell =>
+              val nested = op.fa.asInstanceOf[IRWS.Tell[E, Any, L]]
 
               res = unit
               log = combine(log, nested.l)
               currOp = op.f(unit)
 
-            case RWS.Tags.Logged =>
-              val nested = currOp.asInstanceOf[RWS.Logged[E, S, L, A]]
+            case IRWS.Tags.Logged =>
+              val nested = currOp.asInstanceOf[IRWS.Logged[E, Any, L, A]]
 
               res = nested.a
               log = combine(log, nested.l)
 
               currOp = op.f(res)
 
-            case RWS.Tags.Wrap =>
-              val nested = currOp.asInstanceOf[RWS.Wrap[E, S, L, A]]
+            case IRWS.Tags.Wrap =>
+              val nested = currOp.asInstanceOf[IRWS.Wrap[E, Any, Any, L, A]]
 
               val wrapResult = nested.f(env, state)
 
@@ -217,70 +215,6 @@ object Interpreter {
       }
     } while (!done)
 
-    (state, log, res.asInstanceOf[A])
+    (state.asInstanceOf[SB], log, res.asInstanceOf[A])
   }
-
-  // GADT shenanigans. This should be at some point the stack safe version.
-  // def runIdiomatic[S, A](s0: S)(fa0: RWS[S, A]): (S, A) = {
-  //   @annotation.tailrec
-  //   def go(s: S, fa: RWS[S, A]): (S, A) =
-  //     fa match {
-  //       case RWS.Pure(a) =>
-  //         (s, a)
-
-  //       case RWS.FlatMap(fa, f) =>
-  //         fa match {
-  //           case RWS.Pure(a) =>
-  //             go(s, f(a))
-
-  //           case RWS.Get() =>
-  //             go(s, f(s))
-
-  //           case x: RWS.Set[S] =>
-  //             go(x.s, f(()))
-
-  //           case RWS.FlatMap(faInner, ff) =>
-  //             go(s, faInner.flatMap(x => ff(x).flatMap(f)))
-  //         }
-
-  //       case RWS.Get() =>
-  //         (s, s.asInstanceOf[A])
-
-  //       case RWS.Set(s) =>
-  //         (s, ().asInstanceOf[A])
-  //     }
-
-  //   go(s0, fa0)
-  // }
-
-  def runIdiomatic[E, S, L, A](e: E, s: S, l: L)(fa: RWS[E, S, L, A])(combine: (L, L) => L): (S, L, A) =
-    fa match {
-      case RWS.Pure(a) =>
-        (s, l, a)
-
-      case flatmap: RWS.FlatMap[E, S, L, x, A] =>
-        val (s2, l2, x) = runIdiomatic(e, s, l)(flatmap.fa)(combine)
-
-        runIdiomatic(e, s2, l2)(flatmap.f(x))(combine)
-
-      case RWS.Get() =>
-        (s, l, s.asInstanceOf[A])
-
-      case RWS.Set(s) =>
-        (s, l, ().asInstanceOf[A])
-
-      case RWS.Ask() =>
-        (s, l, e.asInstanceOf[A])
-
-      case RWS.Tell(l2) =>
-        (s, combine(l, l2), ().asInstanceOf[A])
-
-      case RWS.Logged(l2, a) =>
-        (s, combine(l, l2), a)
-
-      case RWS.Wrap(f) =>
-        val res = f(e, s)
-
-        (res._1, combine(l, res._2), res._3)
-    }
 }

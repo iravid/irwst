@@ -9,20 +9,20 @@ import scalaz.{ State => ScalazState }
 @OutputTimeUnit(TimeUnit.SECONDS)
 class Benchmarks {
   def leftAssociatedBindOptimized(bound: Int): Int = {
-    def loop(i: Int): RWS[Int, Int, Int, Int] =
-      if (i > bound) RWS.pure(i)
-      else RWS.pure(i + 1).flatMap(loop)
+    def loop(i: Int): IRWS[Int, Int, Int, Int, Int] =
+      if (i > bound) IRWS.pure(i)
+      else IRWS.pure(i + 1).flatMap(loop)
 
-    Interpreter.runOptimized(0, 0, 0)(RWS.pure(0).flatMap(loop))(_ + _)._1
+    Interpreter.runOptimized(0, 0, 0)(IRWS.pure(0).flatMap(loop))(_ + _)._1
   }
 
-  def leftAssociatedBindIdiomatic(bound: Int): Int = {
-    def loop(i: Int): RWS[Int, Int, Int, Int] =
-      if (i > bound) RWS.pure(i)
-      else RWS.pure(i + 1).flatMap(loop)
+  // def leftAssociatedBindIdiomatic(bound: Int): Int = {
+  //   def loop(i: Int): IRWS[Int, Int, Int, Int, Int] =
+  //     if (i > bound) IRWS.pure(i)
+  //     else IRWS.pure(i + 1).flatMap(loop)
 
-    Interpreter.runIdiomatic(0, 0, 0)(RWS.pure(0).flatMap(loop))(_ + _)._1
-  }
+  //   Interpreter.runIdiomatic(0, 0, 0)(IRWS.pure(0).flatMap(loop))(_ + _)._1
+  // }
 
   def leftAssociatedBindPlain(bound: Int): Int = {
     def loop(i: Int): State[Int, Int] =
@@ -49,20 +49,20 @@ class Benchmarks {
   }
 
   def getSetOptimized(bound: Int): Int = {
-    def loop(i: Int, acc: RWS[Int, Int, Int, Int]): RWS[Int, Int, Int, Int] =
-      if (i > bound) acc.flatMap(_ => RWS.set(i)).flatMap(_ => RWS.get)
-      else loop(i + 1, acc.flatMap(_ => RWS.set(i)).flatMap(_ => RWS.get))
+    def loop(i: Int, acc: IRWS[Int, Int, Int, Int, Int]): IRWS[Int, Int, Int, Int, Int] =
+      if (i > bound) acc.flatMap(_ => IRWS.set(i)).flatMap(_ => IRWS.get)
+      else loop(i + 1, acc.flatMap(_ => IRWS.set(i)).flatMap(_ => IRWS.get))
 
-    Interpreter.runOptimized(0, 0, 0)(loop(0, RWS.pure(0)))(_ + _)._1
+    Interpreter.runOptimized(0, 0, 0)(loop(0, IRWS.pure(0)))(_ + _)._1
   }
 
-  def getSetIdiomatic(bound: Int): Int = {
-    def loop(i: Int, acc: RWS[Int, Int, Int, Int]): RWS[Int, Int, Int, Int] =
-      if (i > bound) acc.flatMap(_ => RWS.set(i)).flatMap(_ => RWS.get)
-      else loop(i + 1, acc.flatMap(_ => RWS.set(i)).flatMap(_ => RWS.get))
+  // def getSetIdiomatic(bound: Int): Int = {
+  //   def loop(i: Int, acc: IRWS[Int, Int, Int, Int, Int]): IRWS[Int, Int, Int, Int, Int] =
+  //     if (i > bound) acc.flatMap(_ => IRWS.set(i)).flatMap(_ => IRWS.get)
+  //     else loop(i + 1, acc.flatMap(_ => IRWS.set(i)).flatMap(_ => IRWS.get))
 
-    Interpreter.runIdiomatic(0, 0, 0)(loop(0, RWS.pure(0)))(_ + _)._1
-  }
+  //   Interpreter.runIdiomatic(0, 0, 0)(loop(0, IRWS.pure(0)))(_ + _)._1
+  // }
 
   def getSetPlain(bound: Int): Int = {
     def loop(i: Int, acc: State[Int, Int]): State[Int, Int] =
@@ -88,19 +88,19 @@ class Benchmarks {
     loop(0, ScalazState.state(0)).runRec(0)._1
   }
 
-  def effectfulTraversalIdiomatic(bound: Int): Int =
-    Interpreter.runIdiomatic(0, 0, 0) {
-      RWS.traverse((0 to bound).toList) { el =>
-        RWS.get[Int, Int, Int].flatMap(s => RWS.set(s + el))
-      }
-    }(_ + _)._1
+  // def effectfulTraversalIdiomatic(bound: Int): Int =
+    // Interpreter.runIdiomatic(0, 0, 0) {
+    //   IRWS.traverse((0 to bound).toList) { el =>
+    //     IRWS.get[Int, Int, Int].flatMap(s => IRWS.set(s + el))
+    //   }
+    // }(_ + _)._1
 
-  def effectfulTraversalOptimized(bound: Int): Int =
-    Interpreter.runOptimized(0, 0, 0) {
-      RWS.traverse((0 to bound).toList) { el =>
-        RWS.get[Int, Int, Int].flatMap(s => RWS.set(s + el))
-      }
-    }(_ + _)._1
+  // def effectfulTraversalOptimized(bound: Int): Int =
+  //   Interpreter.runOptimized(0, 0, 0) {
+  //     IRWS.traverse((0 to bound).toList) { el =>
+  //       IRWS.get[Int, Int, Int].flatMap(s => IRWS.set(s + el))
+  //     }
+  //   }(_ + _)._1
 
   def effectfulTraversalPlain(bound: Int): Int =
     State.traverse((0 to bound).toList) { el =>
@@ -123,41 +123,41 @@ class Benchmarks {
     }.runRec(0)._1
   }
 
-  @Benchmark
-  def effectfulTraversalIdiomatic1k(): Int = effectfulTraversalIdiomatic(1000)
-  @Benchmark
-  def effectfulTraversalIdiomatic10k(): Int = effectfulTraversalIdiomatic(10000)
-  @Benchmark
-  def effectfulTraversalIdiomatic100k(): Int = effectfulTraversalIdiomatic(100000)
-  @Benchmark
-  def effectfulTraversalIdiomatic1mil(): Int = effectfulTraversalIdiomatic(1000000)
+  // @Benchmark
+  // def effectfulTraversalIdiomatic1k(): Int = effectfulTraversalIdiomatic(1000)
+  // @Benchmark
+  // def effectfulTraversalIdiomatic10k(): Int = effectfulTraversalIdiomatic(10000)
+  // @Benchmark
+  // def effectfulTraversalIdiomatic100k(): Int = effectfulTraversalIdiomatic(100000)
+  // @Benchmark
+  // def effectfulTraversalIdiomatic1mil(): Int = effectfulTraversalIdiomatic(1000000)
 
-  @Benchmark
-  def getSetIdiomatic1k(): Int = getSetIdiomatic(1000)
-  @Benchmark
-  def getSetIdiomatic10k(): Int = getSetIdiomatic(10000)
-  @Benchmark
-  def getSetIdiomatic100k(): Int = getSetIdiomatic(100000)
-  @Benchmark
-  def getSetIdiomatic1mil(): Int = getSetIdiomatic(1000000)
+  // @Benchmark
+  // def getSetIdiomatic1k(): Int = getSetIdiomatic(1000)
+  // @Benchmark
+  // def getSetIdiomatic10k(): Int = getSetIdiomatic(10000)
+  // @Benchmark
+  // def getSetIdiomatic100k(): Int = getSetIdiomatic(100000)
+  // @Benchmark
+  // def getSetIdiomatic1mil(): Int = getSetIdiomatic(1000000)
   
-  @Benchmark
-  def leftAssociatedBindIdiomatic1k(): Int = leftAssociatedBindIdiomatic(1000)
-  @Benchmark
-  def leftAssociatedBindIdiomatic10k(): Int = leftAssociatedBindIdiomatic(10000)
-  @Benchmark
-  def leftAssociatedBindIdiomatic100k(): Int = leftAssociatedBindIdiomatic(100000)
-  @Benchmark
-  def leftAssociatedBindIdiomatic1mil(): Int = leftAssociatedBindIdiomatic(1000000)
+  // @Benchmark
+  // def leftAssociatedBindIdiomatic1k(): Int = leftAssociatedBindIdiomatic(1000)
+  // @Benchmark
+  // def leftAssociatedBindIdiomatic10k(): Int = leftAssociatedBindIdiomatic(10000)
+  // @Benchmark
+  // def leftAssociatedBindIdiomatic100k(): Int = leftAssociatedBindIdiomatic(100000)
+  // @Benchmark
+  // def leftAssociatedBindIdiomatic1mil(): Int = leftAssociatedBindIdiomatic(1000000)
 
-  @Benchmark
-  def effectfulTraversalOptimized1k(): Int = effectfulTraversalOptimized(1000)
-  @Benchmark
-  def effectfulTraversalOptimized10k(): Int = effectfulTraversalOptimized(10000)
-  @Benchmark
-  def effectfulTraversalOptimized100k(): Int = effectfulTraversalOptimized(100000)
-  @Benchmark
-  def effectfulTraversalOptimized1mil(): Int = effectfulTraversalOptimized(1000000)
+  // @Benchmark
+  // def effectfulTraversalOptimized1k(): Int = effectfulTraversalOptimized(1000)
+  // @Benchmark
+  // def effectfulTraversalOptimized10k(): Int = effectfulTraversalOptimized(10000)
+  // @Benchmark
+  // def effectfulTraversalOptimized100k(): Int = effectfulTraversalOptimized(100000)
+  // @Benchmark
+  // def effectfulTraversalOptimized1mil(): Int = effectfulTraversalOptimized(1000000)
 
   @Benchmark
   def getSetOptimized1k(): Int = getSetOptimized(1000)

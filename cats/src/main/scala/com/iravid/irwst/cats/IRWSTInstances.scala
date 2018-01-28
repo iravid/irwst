@@ -3,7 +3,7 @@ package cats
 
 import _root_.cats.{ Monad, Monoid, StackSafeMonad }
 
-abstract class IRWSSyntax {
+trait IRWSSyntax {
   implicit class IRWSOps[E, SA, SB, L, A](fa: IRWS[E, SA, SB, L, A]) {
     def run(e: E, sa: SA)(implicit L: Monoid[L]): (SB, L, A) =
       Interpreter.runOptimized(e, sa, L.empty)(fa)(L.combine)
@@ -16,7 +16,7 @@ abstract class IRWSSyntax {
   }
 }
 
-abstract class IRWSInstances0 {
+trait IRWSInstances0 {
   implicit def comIravidIRWSMonad[E, S, L]: Monad[IRWS[E, S, S, L, ?]] =
     new Monad[IRWS[E, S, S, L, ?]] with StackSafeMonad[IRWS[E, S, S, L, ?]] {
       def pure[A](x: A): IRWS[E, S, S, L, A] = IRWS.pure(x)

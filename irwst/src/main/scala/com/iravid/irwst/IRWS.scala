@@ -3,7 +3,8 @@ package com.iravid.irwst
 sealed abstract class IRWS[E, SA, SB, L, A] { self =>
   def tag: Int
 
-  final def map[B](f: A => B): IRWS[E, SA, SB, L, B] = IRWS.FlatMap(self, f.andThen(IRWS.Pure[E, SB, L, B](_)))
+  final def map[B](f: A => B): IRWS[E, SA, SB, L, B] =
+    IRWS.FlatMap(self, f.andThen(IRWS.Pure[E, SB, L, B](_)))
 
   final def flatMap[SC, B](f: A => IRWS[E, SB, SC, L, B]): IRWS[E, SA, SC, L, B] =
     IRWS.FlatMap(self, f)
@@ -46,8 +47,10 @@ object IRWS {
     override final def tag = Tags.Pure
   }
 
-  final case class FlatMap[E, SA, SB, SC, L, A, B](fa: IRWS[E, SA, SB, L, A], f: A => IRWS[E, SB, SC, L, B]) 
-      extends IRWS[E, SA, SC, L, B] {
+  final case class FlatMap[E, SA, SB, SC, L, A, B](
+    fa: IRWS[E, SA, SB, L, A],
+    f: A => IRWS[E, SB, SC, L, B]
+  ) extends IRWS[E, SA, SC, L, B] {
     override final def tag = Tags.FlatMap
   }
 
@@ -77,7 +80,11 @@ object IRWS {
 }
 
 object Interpreter {
-  def runOptimized[E, SA, SB, L, A](env: E, init: SA, initLog: L)(fa: IRWS[E, SA, SB, L, A])(combine: (L, L) => L): (SB, L, A) = {
+  def runOptimized[E, SA, SB, L, A](
+    env: E,
+    init: SA,
+    initLog: L
+  )(fa: IRWS[E, SA, SB, L, A])(combine: (L, L) => L): (SB, L, A) = {
     var currOp: IRWS[E, Any, Any, L, Any] = fa.asInstanceOf[IRWS[E, Any, Any, L, Any]]
     var done: Boolean = false
 

@@ -17,10 +17,11 @@ abstract class IRWSSyntax {
 }
 
 abstract class IRWSInstances0 {
-  implicit def comIravidIRWSMonad[E, S, L]: Monad[IRWS[E, S, S, L, ?]] = new Monad[IRWS[E, S, S, L, ?]] with StackSafeMonad[IRWS[E, S, S, L, ?]] {
-    def pure[A](x: A): IRWS[E, S, S, L, A] = IRWS.pure(x)
+  implicit def comIravidIRWSMonad[E, S, L]: Monad[IRWS[E, S, S, L, ?]] =
+    new Monad[IRWS[E, S, S, L, ?]] with StackSafeMonad[IRWS[E, S, S, L, ?]] {
+      def pure[A](x: A): IRWS[E, S, S, L, A] = IRWS.pure(x)
 
-    def flatMap[A, B](fa: IRWS[E, S, S, L, A])(f: A => IRWS[E, S, S, L, B]): IRWS[E, S, S, L, B] =
-      fa.flatMap(f)
-  }
+      def flatMap[A, B](fa: IRWS[E, S, S, L, A])(f: A => IRWS[E, S, S, L, B]): IRWS[E, S, S, L, B] =
+        fa.flatMap(f)
+    }
 }

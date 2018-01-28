@@ -89,11 +89,11 @@ class Benchmarks {
   }
 
   // def effectfulTraversalIdiomatic(bound: Int): Int =
-    // Interpreter.runIdiomatic(0, 0, 0) {
-    //   IRWS.traverse((0 to bound).toList) { el =>
-    //     IRWS.get[Int, Int, Int].flatMap(s => IRWS.set(s + el))
-    //   }
-    // }(_ + _)._1
+  // Interpreter.runIdiomatic(0, 0, 0) {
+  //   IRWS.traverse((0 to bound).toList) { el =>
+  //     IRWS.get[Int, Int, Int].flatMap(s => IRWS.set(s + el))
+  //   }
+  // }(_ + _)._1
 
   // def effectfulTraversalOptimized(bound: Int): Int =
   //   Interpreter.runOptimized(0, 0, 0) {
@@ -103,24 +103,34 @@ class Benchmarks {
   //   }(_ + _)._1
 
   def effectfulTraversalPlain(bound: Int): Int =
-    State.traverse((0 to bound).toList) { el =>
-      State.get[Int].flatMap(s => State.set(s + el))
-    }.run(0)._1
+    State
+      .traverse((0 to bound).toList) { el =>
+        State.get[Int].flatMap(s => State.set(s + el))
+      }
+      .run(0)
+      ._1
 
   def effectfulTraversalCats(bound: Int): Int = {
     import cats.instances.list._, cats.syntax.traverse._
 
-    (0 to bound).toList.traverse { el =>
-      CatsState.get[Int].flatMap(s => CatsState.set(s + el))
-    }.run(0).value._1
+    (0 to bound).toList
+      .traverse { el =>
+        CatsState.get[Int].flatMap(s => CatsState.set(s + el))
+      }
+      .run(0)
+      .value
+      ._1
   }
 
   def effectfulTraversalScalaz(bound: Int): Int = {
     import scalaz.std.list._, scalaz.syntax.traverse._
 
-    (0 to bound).toList.traverse { el =>
-      ScalazState.get[Int].flatMap(s => ScalazState.put(s + el))
-    }.runRec(0)._1
+    (0 to bound).toList
+      .traverse { el =>
+        ScalazState.get[Int].flatMap(s => ScalazState.put(s + el))
+      }
+      .runRec(0)
+      ._1
   }
 
   // @Benchmark
@@ -140,7 +150,7 @@ class Benchmarks {
   // def getSetIdiomatic100k(): Int = getSetIdiomatic(100000)
   // @Benchmark
   // def getSetIdiomatic1mil(): Int = getSetIdiomatic(1000000)
-  
+
   // @Benchmark
   // def leftAssociatedBindIdiomatic1k(): Int = leftAssociatedBindIdiomatic(1000)
   // @Benchmark
@@ -167,7 +177,7 @@ class Benchmarks {
   def getSetOptimized100k(): Int = getSetOptimized(100000)
   @Benchmark
   def getSetOptimized1mil(): Int = getSetOptimized(1000000)
-  
+
   @Benchmark
   def leftAssociatedBindOptimized1k(): Int = leftAssociatedBindOptimized(1000)
   @Benchmark
@@ -194,7 +204,7 @@ class Benchmarks {
   def getSetPlain100k(): Int = getSetPlain(100000)
   @Benchmark
   def getSetPlain1mil(): Int = getSetPlain(1000000)
-  
+
   @Benchmark
   def leftAssociatedBindPlain1k(): Int = leftAssociatedBindPlain(1000)
   @Benchmark
@@ -221,7 +231,7 @@ class Benchmarks {
   def getSetCats100k(): Int = getSetCats(100000)
   @Benchmark
   def getSetCats1mil(): Int = getSetCats(1000000)
-  
+
   @Benchmark
   def leftAssociatedBindCats1k(): Int = leftAssociatedBindCats(1000)
   @Benchmark
@@ -248,7 +258,7 @@ class Benchmarks {
   def getSetScalaz100k(): Int = getSetScalaz(100000)
   @Benchmark
   def getSetScalaz1mil(): Int = getSetScalaz(1000000)
-  
+
   @Benchmark
   def leftAssociatedBindScalaz1k(): Int = leftAssociatedBindScalaz(1000)
   @Benchmark

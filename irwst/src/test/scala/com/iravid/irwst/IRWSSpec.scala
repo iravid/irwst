@@ -6,14 +6,15 @@ import org.scalatest._
 import org.scalatest.Matchers
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 
-trait Spec extends WordSpec with Matchers with TypeCheckedTripleEquals with GeneratorDrivenPropertyChecks {
+trait Spec
+    extends WordSpec with Matchers with TypeCheckedTripleEquals with GeneratorDrivenPropertyChecks {
   implicit override val generatorDrivenConfig: PropertyCheckConfiguration =
     PropertyCheckConfiguration(
-      minSuccessful = PosInt(50),
+      minSuccessful      = PosInt(50),
       maxDiscardedFactor = PosZDouble(5.0),
-      minSize = PosZInt(0),
-      sizeRange = PosZInt(10),
-      workers = PosInt(2)
+      minSize            = PosZInt(0),
+      sizeRange          = PosZInt(10),
+      workers            = PosInt(2)
     )
 }
 
@@ -30,12 +31,13 @@ class IRWSSpec extends Spec {
           _ <- set(s + i)
         } yield (e, s)
 
-        val (state, resultingLog, (resultingEnv, result)) = Interpreter.runOptimized(env, initState, initLog)(comp)(_ ++ _)
+        val (state, resultingLog, (resultingEnv, result)) =
+          Interpreter.runOptimized(env, initState, initLog)(comp)(_ ++ _)
 
         state should ===(initState + i)
         resultingLog should ===(initLog ++ Vector(log))
         resultingEnv should ===(env)
-        result should === (initState)
+        result should ===(initState)
       }
     }
 

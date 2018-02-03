@@ -63,7 +63,7 @@ lazy val root = (project in file("."))
   .settings(
     publish := {}
   )
-  .aggregate(irwst, cats, benchmarks)
+  .aggregate(irwst, cats, scalaz72, scalaz73, benchmarks)
 
 lazy val irwst = (project in file("irwst"))
   .settings(
@@ -75,6 +75,24 @@ lazy val cats = (project in file("cats"))
     name := "irwst-cats",
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-core" % "1.0.1"
+    )
+  )
+  .dependsOn(irwst)
+
+lazy val scalaz72 = (project in file("scalaz-7.2.x"))
+  .settings(
+    name := "irwst-scalaz72",
+    libraryDependencies ++= Seq(
+      "org.scalaz" %% "scalaz-core" % "7.2.19"
+    )
+  )
+  .dependsOn(irwst)
+
+lazy val scalaz73 = (project in file("scalaz-7.3.x"))
+  .settings(
+    name := "irwst-scalaz73",
+    libraryDependencies ++= Seq(
+      "org.scalaz" %% "scalaz-core" % "7.3.0-M19"
     )
   )
   .dependsOn(irwst)

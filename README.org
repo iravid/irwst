@@ -1,0 +1,5 @@
+* An efficient, stack-safe indexed RWS monad for Scala
+
+Following the benchmarks [[https://github.com/iravid/transformer-benchmarks][here]], this project will eventually be an efficient IRWS monad for Scala with instances for Cats and Scalaz.
+
+Once that is done, I'll try and figure out the RWST version; that will probably be implemented as a natural transformation from the algebra here to Monix / Scalaz 8 IO.
